@@ -1,7 +1,7 @@
 # rubimapper
 Autoware vector_map maker
 
-Author : Sungwoo Koo, Soongsil Univ.
+Author : Sungwoo Koo, Soongsil Univ, Korea.
 
 1. It is Vector map making tool wrote with Python3.
 2. It has dependency for rosbag(in ROS).
