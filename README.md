@@ -9,3 +9,11 @@ Author : Sungwoo Koo, Soongsil Univ.
 4. You can make a vector map for Autoware using it with ROSBAG file, SHP file or Point.csv.
 
 You know what i'm saying?
+
+##
+Autoware vector map
+vector map
+vector map maker
+vector map tool
+create vector map Autoware
+Autoware
