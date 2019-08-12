@@ -9,7 +9,8 @@ Author : Sungwoo Koo, Soongsil Univ, South Korea.
 4. You can make a vector map for Autoware using it with ROSBAG file, SHP file or Point.csv.
 5. You can manipulate dtlanes with MOUSE EVENT.
 
-You know what i'm saying?
+Here is the link about How to use it.
+https://youtu.be/bKH2siAIIWo
 
 ##
 Autoware vector map
