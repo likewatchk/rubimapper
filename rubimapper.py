@@ -11,7 +11,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-
+import tkinter
 import matplotlib
 matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
@@ -54,7 +54,9 @@ from shapely.geometry.polygon import Polygon  # shapely 를 사용할 수 없으
 # Way(Waypoint_list)
 # WaySet(Way_list)
 
-INTERVAL = 0.99
+# Modified
+#INTERVAL = 0.99
+INTERVAL = 0.00001
 START_ID = 10001
 
 """ Define Classes """
@@ -258,6 +260,18 @@ class Lane:
 
     def show(self, bo=False):
         self.plot(bo=bo)
+        control_window = tkinter.Tk()
+        control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+        control_window.geometry("400x50+800+600")
+        control_window.resizable(False, False)
+
+        def btnext():
+            plt.close("all")
+            control_window.quit()
+            control_window.destroy()
+
+        button = tkinter.Button(control_window, text="다음", command=btnext)
+        button.pack()
         plt.show()
 
     def make_uniform_intervals(self, meter):
@@ -318,6 +332,8 @@ class LaneSet:
 
     def __add__(self, other):
         out_lane_list = self.lane_list + other.lane_list
+        if len(out_lane_list) == 0:
+            return LaneSet(line_list=None, lane_list=None)
         return LaneSet(lane_list=out_lane_list)
 
     def min_max_xy(self):
@@ -363,7 +379,7 @@ class LaneSet:
         for l in remove_list:
             self.lane_list.remove(l)
 
-    def adjust_z_coordinate_to(self, reference_laneset):
+    def adjust_z_coordinate_to(self, reference_laneset, textbox=None):
         out_point_list = []
         out_lane_list = []
         n = 1
@@ -371,6 +387,8 @@ class LaneSet:
             for point in lane.point_list:
                 p = reference_laneset.closest_point(point)
                 print(float(int((n / len(lane.point_list)) * 10000))/100, "%")
+                if textbox is not None:
+                    textbox.insert("end", str(float(int((n / len(lane.point_list)) * 10000))/100) + "%")
                 n += 1
                 out_point = Point(point.x, point.y, p.z)  # change z_coordinate with closest point's Z
                 out_point_list.append(out_point)
@@ -390,6 +408,8 @@ class LaneSet:
             endpoint_2 = Pt(lane.point_list[-1].x, lane.point_list[-1].y)
             if poly.contains(endpoint_1) and poly.contains(endpoint_2):
                 out_line_list.append(lane.point_list)
+        if len(out_line_list) == 0:
+            return LaneSet(line_list=None, lane_list=None)
         return LaneSet(line_list=out_line_list)
 
     def points_in_area_of_interest(self, point_list):
@@ -433,7 +453,7 @@ class LaneSet:
             out_lane_list.append(lane.make_uniform_intervals(meter))
         return LaneSet(lane_list=out_lane_list)
 
-    def sub_plot(self, ax, bo=False, ep=False):  # in Lane
+    def sub_plot(self, ax, bo=False, ro=False, ep=False, dash=False):  # in Lane
         x = []
         y = []
         for lane in self.lane_list:
@@ -444,10 +464,14 @@ class LaneSet:
                 # plt.text(x[0], y[0], "{},{}".format(x[0],y[0]), fontsize=8)
                 # plt.text(x[-1], y[-1], "{},{}".format(x[-1],y[-1]), fontsize=8)
                 ax.plot(x, y, 'bo')
+            elif ro:
+                ax.plot(x, y, 'ro')
             elif ep:
                 plt.plot(x, y, 'bo')
                 plt.text(x[0], y[0], "{}".format("S"), fontsize=8)
                 plt.text(x[-1], y[-1], "{}".format("E"), fontsize=8)
+            elif dash:
+                plt.plot(x, y, linestyle=':')
             else:
                 ax.plot(x, y)
             x = []
@@ -476,7 +500,7 @@ class LaneSet:
             x = []
             y = []
 
-    def sub_plot2(self, ax, bo=False):  # in Lanes
+    def sub_plot2(self, ax, bo=False, ro=False):  # in Lanes
         x = []
         y = []
         for lane in self.lane_list:
@@ -487,6 +511,8 @@ class LaneSet:
             # plt.text(x[0], y[0], "{},{}".format(x[0],y[0]), fontsize=8)
             # plt.text(x[-1], y[-1], "{},{}".format(x[-1],y[-1]), fontsize=8)
             line, = ax.plot(x, y, 'bo')
+        elif ro:
+            line, = ax.plot(x, y, 'ro')
         else:
             line, = ax.plot(x, y)
         return line
@@ -535,7 +561,7 @@ class LaneSet:
             y = []
         return out_plot_line_list
 
-    def plot(self, bo=False, reverse=False, ep=False):
+    def plot(self, bo=False, reverse=False, ep=False, ro=False, dash=False):
         plt.xlabel("coordinate X")
         plt.ylabel("coordinate Y")
         plt.title("Line_list")
@@ -555,6 +581,10 @@ class LaneSet:
                 plt.plot(x, y)
                 plt.text(x[0], y[0], "{}".format("S"), fontsize=8)
                 plt.text(x[-1], y[-1], "{}".format("E"), fontsize=8)
+            elif ro:
+                plt.plot(x, y, 'ro')
+            elif dash:
+                plt.plot(x, y, linestyle=':')
             else:
                 plt.plot(x, y)
             x = []
@@ -586,19 +616,61 @@ class LaneSet:
             x = []
             y = []
 
-    def show(self, bo=False, reverse=False):
-        self.plot(bo=bo, reverse=reverse)
+    def show(self, bo=False, reverse=False, dash=False):
+        self.plot(bo=bo, reverse=reverse, dash=dash)
         print("(**SHOW**) executed : LaneSet.show()")
+
+        control_window = tkinter.Tk()
+        control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+        control_window.geometry("400x50+800+600")
+        control_window.resizable(False, False)
+
+        def btnext():
+            plt.close("all")
+            control_window.quit()
+            control_window.destroy()
+
+        button = tkinter.Button(control_window, text="다음", command=btnext)
+        button.pack()
+
         plt.show()
 
     def show_ep(self, bo=False, reverse=False):
         self.plot(bo=bo, reverse=reverse)
         print("(**SHOW**) executed : LaneSet.show()")
+
+        control_window = tkinter.Tk()
+        control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+        control_window.geometry("400x50+800+600")
+        control_window.resizable(False, False)
+
+        def btnext():
+            plt.close("all")
+            control_window.quit()
+            control_window.destroy()
+
+        button = tkinter.Button(control_window, text="다음", command=btnext)
+        button.pack()
+
         plt.show()
 
     def show_idx(self,bo=False, reverse=False):
         self.plot_idx(bo=bo, reverse=reverse)
         print("(**SHOW**) executed : LaneSet.show()")
+
+        control_window = tkinter.Tk()
+        control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+        control_window.geometry("400x50+800+600")
+        control_window.resizable(False, False)
+
+        def btnext():
+            plt.close("all")
+            control_window.quit()
+            control_window.destroy()
+
+        button = tkinter.Button(control_window, text="다음", command=btnext)
+        button.pack()
+
         plt.show()
 
     def get_valid_lanes(self):
@@ -849,6 +921,18 @@ class Path:
 
     def show(self, bo=False):
         self.plot(bo=bo)
+        control_window = tkinter.Tk()
+        control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+        control_window.geometry("400x50+800+600")
+        control_window.resizable(False, False)
+
+        def btnext():
+            plt.close("all")
+            control_window.quit()
+            control_window.destroy()
+
+        button = tkinter.Button(control_window, text="다음", command=btnext)
+        button.pack()
         print("(**SHOW**) executed : Path.show()")
         plt.show()
 
@@ -909,6 +993,18 @@ class PathSet:
 
     def show(self, bo=False, reverse=False):
         idx = self.plot(bo=bo, reverse=reverse)
+        control_window = tkinter.Tk()
+        control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+        control_window.geometry("400x50+800+600")
+        control_window.resizable(False, False)
+
+        def btnext():
+            plt.close("all")
+            control_window.quit()
+            control_window.destroy()
+
+        button = tkinter.Button(control_window, text="다음", command=btnext)
+        button.pack()
         print("(**SHOW**) executed : PathSet.show()", " lines = {}".format(idx - 1))
         plt.show()
 
@@ -1158,8 +1254,9 @@ class EditablePoints:
 
 
 class LineBrowser:
-    def __init__(self, laneset, fig, ax1, ax2):
+    def __init__(self, laneset, fig, ax1, ax2, reference=None):
         self.figure, self.ax1, self.ax2, self.line_list = fig, ax1, ax2, []
+        self.reference = reference
         self.lastline = None
         self.selected = None
         self.laneset = laneset
@@ -1198,9 +1295,9 @@ class LineBrowser:
 
     def _updata(self, event):
         self.ax2.cla()
-        plot_bag_reference2(self.ax2, ro=False, dash=True)
-        plot_bag_reference2_addition(self.ax2, ro=False, dash=True)
-        plot_bag_reference_clicked_point_ax(self.ax2, ro=False, dash=True)
+        if self.reference is not None:
+            self.reference.sub_plot(self.ax2, dash=True)    #####present
+        # plot_bag_reference2(self.ax2, ro=False, dash=True)
         if self.lastline is not None:
             x = self.lastline.get_xdata()
             y = self.lastline.get_ydata()
@@ -1373,6 +1470,8 @@ def read_wkt_csv_file(wkt_csv_file):  # read WKT whose format is LineString ZM(l
 
 
 def show_line_list(line_list):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     plt.xlabel("coordinate X")
     plt.ylabel("coordinate Y")
     plt.title("vector_lists")
@@ -1386,6 +1485,16 @@ def show_line_list(line_list):
         x_list = []
         y_list = []
     print("(**print**) executed : show_line_lists")
+    control_window = tkinter.Tk()
+    control_window.title("작업을 마치신 후에 다음 버튼을 눌러주세요")
+    control_window.geometry("100x50+700+700")
+    control_window.resizable(False, False)
+    def btnext():
+        plt.close("all")
+        control_window.quit()
+        control_window.destroy()
+    button = tkinter.Button(control_window, text="다음", command=btnext)
+    button.pack()
     plt.show()
 
 
@@ -1507,7 +1616,7 @@ def make_curve2(endpoint, end_radian):
 
 
 def plot_bag_reference(ro=True, dash=False):
-    path_dir = '/home/softkoo/dtlane_ws/rosbag'
+    path_dir = '/home/wildwar/Downloads/rubimapper-master/rosbag'
     file_list = os.listdir(path_dir)
     file_list.sort()
     x = []
@@ -1715,7 +1824,43 @@ def write_autoware_dtlane(wayset):
                                      + [1] + [0] + [20] + [20] + [0] + [0] + [0])
 
 
-def choose_loop(title, in_laneset, mode, bo=False, reverse=True):
+def read_rosbag(path):
+    f_list = os.listdir(path)
+    f_list.sort()
+    rosbag_point_list = []
+    rosbag_lane_list = []
+    for bag_file in f_list:
+        bag = rosbag.Bag(path + "/" + bag_file)
+        for msg in bag.read_messages(topics=['ndt_pose']):
+            p = Point(msg[1].pose.position.y, msg[1].pose.position.x, msg[1].pose.position.z)
+            rosbag_point_list.append(p)
+        for msg in bag.read_messages(topics=['/ndt_pose']):
+            p = Point(msg[1].pose.position.y, msg[1].pose.position.x, msg[1].pose.position.z)
+            rosbag_point_list.append(p)
+        rosbag_lane_list.append(Lane(point_list=rosbag_point_list))
+        rosbag_point_list = []
+        bag.close()
+    return LaneSet(lane_list=rosbag_lane_list)
+
+
+def read_point_csv(path):
+    f_list = os.listdir(path)
+    f_list.sort()
+    point_csv_point_list = []
+    point_csv_lane_list = []
+    for point_csv in f_list:
+        with open(path+'/'+point_csv, mode='r', encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter=',')
+            reader.__next__()
+            for row in reader:
+                p = Point(float(row[4]), float(row[5]), float(row[3]))
+                point_csv_point_list.append(p)
+            point_csv_lane_list.append(Lane(point_list=point_csv_point_list))
+            point_csv_point_list = []
+    return LaneSet(lane_list=point_csv_lane_list)
+
+
+def choose_area(title, in_laneset, mode, bo=False, reverse=True):
     control = 'y'
     out_laneset = in_laneset
     while control == 'y':
@@ -1747,7 +1892,7 @@ def choose_loop(title, in_laneset, mode, bo=False, reverse=True):
     return out_laneset
 
 
-def extract_lanes(title, in_laneset, bo=False, reverse=True):
+def extract_lane_points(title, in_laneset, bo=False, reverse=True):
     control = 'y'
     add_lane_list = []
     add_laneset = None
@@ -1802,43 +1947,6 @@ def drop_lanes(in_laneset):
 
         control = input("more? [y/n]")
     return out_laneset
-
-
-def read_rosbag(path, folder):
-    f_list = os.listdir(path)
-    f_list.sort()
-    rosbag_point_list = []
-    rosbag_lane_list = []
-    for bag_file in f_list:
-        bag = rosbag.Bag(folder + "/" + bag_file)
-        for msg in bag.read_messages(topics=['ndt_pose']):
-            p = Point(msg[1].pose.position.y, msg[1].pose.position.x, msg[1].pose.position.z)
-            rosbag_point_list.append(p)
-        for msg in bag.read_messages(topics=['/ndt_pose']):
-            p = Point(msg[1].pose.position.y, msg[1].pose.position.x, msg[1].pose.position.z)
-            rosbag_point_list.append(p)
-        rosbag_lane_list.append(Lane(point_list=rosbag_point_list))
-        rosbag_point_list = []
-        bag.close()
-    return LaneSet(lane_list=rosbag_lane_list)
-
-
-def read_point_csv(path, folder):
-    f_list = os.listdir(path)
-    f_list.sort()
-    point_csv_point_list = []
-    point_csv_lane_list = []
-    for point_csv in f_list:
-        with open(folder+'/'+point_csv, mode='r', encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter=',')
-            reader.__next__()
-            for row in reader:
-                p = Point(float(row[4]), float(row[5]), float(row[3]))
-                point_csv_point_list.append(p)
-            point_csv_lane_list.append(Lane(point_list=point_csv_point_list))
-            point_csv_point_list = []
-    return LaneSet(lane_list=point_csv_lane_list)
-
 
 """ execution """
 
