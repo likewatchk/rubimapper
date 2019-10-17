@@ -5,9 +5,7 @@ Author : Sungwoo Koo, Soongsil Univ, South Korea.
 
 1. It is Vector map making tool written with Python3.
 2. It has dependency for rosbag(in ROS).
-3. You can execute the code, Rubi_mapper_v4.3_exe.py.
-4. You can make a vector map for Autoware using it with ROSBAG file, SHP file or Point.csv.
-5. You can manipulate dtlanes with MOUSE EVENT.
+3. You can execute rubimapper_manager. It provide you with the interface you can use for it.
 
 Here is the link about How to use it.
 https://youtu.be/bKH2siAIIWo
