@@ -202,7 +202,7 @@ def save_dtlane():
     wayset = pathset.wayset()
     terminal_text.insert("end", "save dtlane \n")
     write_autoware_dtlane(wayset)
-
+    terminal_text.insert("end", "saved dtlane \n")
 
 def smoothing():
     global working_laneset

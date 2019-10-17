@@ -1329,6 +1329,9 @@ class Waypoint:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y and id(self) != id(other)  # and self.z == other.z
 
+    def equal_xy(self, other):
+        return self.x == other.x and self.y == other.y
+
     def point(self):
         return Point(self.x, self.y, self.z)
 
@@ -1365,7 +1368,7 @@ class Way:
             self.waypiece_list.append(wpiece)
 
         for i in range(len(self.waypiece_list)-1):  # WayPieces   /// it breaks if point_list has sequence problem
-            if self.waypiece_list[i].back_pt == self.waypiece_list[i+1].front_pt:
+            if self.waypiece_list[i].back_pt.equal_xy(self.waypiece_list[i+1].front_pt):
                 self.waypiece_list[i].after_piece = self.waypiece_list[i+1]
                 self.waypiece_list[i+1].before_piece = self.waypiece_list[i]
 
