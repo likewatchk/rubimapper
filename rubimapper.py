@@ -133,6 +133,9 @@ class Point:
     def __eq__(self, operand):
         return self.x == operand.x and self.y == operand.y  # and self.z == operand.z  #todo z축 값 맞추기
 
+    def symmetric_point(self):
+        return Point(self.y, self.x, self.z)
+
 
 class Endpoint:
     def __init__(self, **kwargs):
@@ -243,6 +246,13 @@ class Lane:
 
     def end_points(self):
         return [self.endp1, self.endp2]
+
+    def symmetric_lane(self):
+        out_point_list = []
+        for point in self.point_list:
+            p = point.symmetric_point()
+            out_point_list.append(p)
+        return Lane(point_list=out_point_list)
 
     def plot(self, bo=False):
         plt.xlabel("coordinate X")
@@ -359,6 +369,17 @@ class LaneSet:
                 minimum_y = miny
         return minimum_x, minimum_y, maximum_x, maximum_y
 
+    def symmetric_laneset(self):
+        out_lane_list = []
+        for lane in self.lane_list:
+            pl = []
+            for point in lane.point_list:
+                p = point.symmetric_point()
+                pl.append(p)
+            L = Lane(point_list=pl)
+            out_lane_list.append(L)
+        return LaneSet(lane_list=out_lane_list)
+
     def closest_point(self, point):
         closest_point = self.lane_list[0].point_list[0]
         min_l = (point - closest_point).magnitude_xy()
@@ -400,9 +421,9 @@ class LaneSet:
     def lanes_in_area_of_interest(self, point_list):
         out_line_list = []  # not Lane, it is line!
         poly = Polygon(point_list)
-        x, y = poly.exterior.xy
-        plt.plot(x, y)  # show together with the LaneSet
-        self.show()
+        # x, y = poly.exterior.xy
+        # plt.plot(x, y)  # show together with the LaneSet
+        # self.show()
         for lane in self.lane_list:
             endpoint_1 = Pt(lane.point_list[0].x, lane.point_list[0].y)
             endpoint_2 = Pt(lane.point_list[-1].x, lane.point_list[-1].y)
@@ -415,9 +436,9 @@ class LaneSet:
     def points_in_area_of_interest(self, point_list):
         out_point_list = []  # not Lane, it is line!
         poly = Polygon(point_list)
-        x, y = poly.exterior.xy
-        plt.plot(x, y)  # show together with the LaneSet
-        self.show()
+        # x, y = poly.exterior.xy
+        # plt.plot(x, y)  # show together with the LaneSet
+        # self.show()
         for lane in self.lane_list:
             for point in lane.point_list:
                 pt = Pt(point.x, point.y)
@@ -434,9 +455,9 @@ class LaneSet:
 
     def remove_points_in_area(self, point_list):
         poly = Polygon(point_list)
-        x, y = poly.exterior.xy
-        plt.plot(x, y)  # show together with the LaneSet
-        self.show()
+        # x, y = poly.exterior.xy
+        # plt.plot(x, y)  # show together with the LaneSet
+        # self.show()
         remove_list = []
         for lane in self.lane_list:
             for point in lane.point_list:
@@ -453,7 +474,7 @@ class LaneSet:
             out_lane_list.append(lane.make_uniform_intervals(meter))
         return LaneSet(lane_list=out_lane_list)
 
-    def sub_plot(self, ax, bo=False, ro=False, ep=False, dash=False):  # in Lane
+    def sub_plot(self, ax, bo=False, ro=False, ep=False, dash=False, reverse=False):  # in Lane
         x = []
         y = []
         for lane in self.lane_list:
@@ -467,11 +488,13 @@ class LaneSet:
             elif ro:
                 ax.plot(x, y, 'ro')
             elif ep:
-                plt.plot(x, y, 'bo')
-                plt.text(x[0], y[0], "{}".format("S"), fontsize=8)
-                plt.text(x[-1], y[-1], "{}".format("E"), fontsize=8)
+                ax.plot(x, y, 'bo')
+                ax.text(x[0], y[0], "{}".format("S"), fontsize=8)
+                ax.text(x[-1], y[-1], "{}".format("E"), fontsize=8)
             elif dash:
-                plt.plot(x, y, linestyle=':')
+                ax.plot(x, y, linestyle=':')
+            elif reverse:
+                ax.plot(y, x)
             else:
                 ax.plot(x, y)
             x = []
@@ -517,7 +540,7 @@ class LaneSet:
             line, = ax.plot(x, y)
         return line
 
-    def sub_plot3(self, ax, bo=False):  # in Draggable lane
+    def sub_plot_each_draggable_line(self, ax, bo=False):  # in Draggable lane
         dls = []
         x = []
         y = []
@@ -632,7 +655,7 @@ class LaneSet:
 
         button = tkinter.Button(control_window, text="다음", command=btnext)
         button.pack()
-
+        plt.axes().set_aspect('equal', 'datalim')
         plt.show()
 
     def show_ep(self, bo=False, reverse=False):
@@ -651,7 +674,7 @@ class LaneSet:
 
         button = tkinter.Button(control_window, text="다음", command=btnext)
         button.pack()
-
+        plt.axes().set_aspect('equal', 'datalim')
         plt.show()
 
     def show_idx(self,bo=False, reverse=False):
@@ -670,7 +693,7 @@ class LaneSet:
 
         button = tkinter.Button(control_window, text="다음", command=btnext)
         button.pack()
-
+        plt.axes().set_aspect('equal', 'datalim')
         plt.show()
 
     def get_valid_lanes(self):
@@ -963,6 +986,33 @@ class PathSet:
         for path in self.path_list:
             out_path_list.append(path.smoothing(meter=INTERVAL))
         return PathSet(path_list=out_path_list)
+
+    def sub_plot(self, ax, bo=False, reverse=False):
+        x = []
+        y = []
+        idx = 0
+        for path in self.path_list:
+            for point in path.point_list:
+                x.append(point.x)
+                y.append(point.y)
+            if bo:
+                ax.plot(x, y, 'bo')
+                ax.text(x[0], y[0], "{}".format("S"), fontsize=8)
+                ax.text(x[-1], y[-1], "{}".format("E"), fontsize=8)
+                ax.text(x[len(x) // 2], y[len(y) // 2], "{}".format(idx), fontsize=10)
+            elif reverse:
+                ax.plot(y, x)
+                ax.text(y[0], x[0], "{}".format("S"), fontsize=10, color='blue')
+                ax.text(y[-1], x[-1], "{}".format("E"), fontsize=10, color='red')
+                ax.text(y[len(y) // 2], x[len(x) // 2], "{}".format(idx), fontsize=11)
+            else:
+                ax.plot(x, y)
+                ax.text(x[0], y[0], "S", fontsize=10, color='blue')
+                ax.text(x[-1], y[-1], "{}".format("E"), fontsize=10, color='red')
+                ax.text(x[len(x) // 2], y[len(y) // 2], "{}".format(idx), fontsize=11)
+            idx += 1
+            x = []
+            y = []
 
     def plot(self, bo=False, reverse=False):
         plt.xlabel("coordinate X")
@@ -1863,7 +1913,7 @@ def read_point_csv(path):
     return LaneSet(lane_list=point_csv_lane_list)
 
 
-def choose_area(title, in_laneset, mode, bo=False, reverse=True):
+def choose_area_old(title, in_laneset, mode, bo=False, reverse=True):
     control = 'y'
     out_laneset = in_laneset
     while control == 'y':
