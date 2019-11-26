@@ -1,7 +1,24 @@
+"""
+Copyright [2019] [Sungwoo Koo(likewatchk@gmail.com), Kanghee Kim(kim.kanghee@gmail.com), Soongsil Univ.]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from rubimapperold import *
 
-PATH = '/home/softkoo/project/rubimapper/rubimapper-master/'
-INTERVAL = 0.99
+PATH = '/home/wildwar/Downloads/rubimapper-master/'
+INTERVAL = 0.03
+
 control_picking = 'y'
 # control_picking = 'n'
 control_reverse = 'y'   # apply reverse
@@ -9,26 +26,24 @@ control_reverse = 'y'   # apply reverse
 control_connecting = 'y'  # enter two index to making connecting lane between the two lane registered.
 # control_connecting = 'n'  # do not use connecting
 
-## RUBIS saved vetormap loading
-folder = 'rosbag_hayeon'
-current_pose_laneset = read_rosbag(PATH + folder)
-current_pose_laneset.show(reverse=True)
-current_pose_laneset = extract_lane_points("take interesting part", in_laneset=current_pose_laneset)
-current_pose_laneset = current_pose_laneset.make_uniform_intervals(INTERVAL)
-
+folder = 'rubis_point'
+point_csv_laneset = read_point_csv(PATH + folder, folder)
+point_csv_laneset.show(reverse=True)
+point_csv_laneset = extract_lane_points("take interesting part", in_laneset=point_csv_laneset)
+point_csv_laneset = point_csv_laneset.make_uniform_intervals(INTERVAL)
 
 while control_picking == 'y':
     fig = plt.figure()
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
-    # plot_bag_reference2(ax1, ro=False, dash=True)
-    # plot_bag_reference2_addition(ax1, ro=False, dash=True)
-    # plot_bag_reference_clicked_point_ax(ax1, ro=False, dash=True)
-    lb = LineBrowser(current_pose_laneset, fig, ax1, ax2)
+    # plot_bag_reference2(present_ax, ro=False, dash=True)
+    # plot_bag_reference2_addition(present_ax, ro=False, dash=True)
+    # plot_bag_reference_clicked_point_ax(present_ax, ro=False, dash=True)
+    lb = LineBrowser(point_csv_laneset, fig, ax1, ax2)
     plt.show()
     plot_line_list = lb.line_list
     out_lane_list = []
-    for pl, lane in itertools.zip_longest(plot_line_list, current_pose_laneset.lane_list):
+    for pl, lane in itertools.zip_longest(plot_line_list, point_csv_laneset.lane_list):
         xdata = list(pl.get_xdata())
         ydata = list(pl.get_ydata())
         zdata = lane.z_list()
@@ -47,7 +62,7 @@ while control_picking == 'y':
         lb.disconnect()
         del lb
 
-pathset = PathSet(laneset=current_pose_laneset)
+pathset = PathSet(laneset=point_csv_laneset)
 pathset.show(reverse=True)
 
 
@@ -69,6 +84,7 @@ while control_reverse == 'y':
         control5_1 = input('quit? (q)')
 
     control_reverse = input('more? (y/n)')
+
 
 while control_connecting == 'y':
     fig = plt.figure()
@@ -115,16 +131,11 @@ while control_connecting == 'y':
     # plot_bag_reference_clicked_point(ro=False, dash=True)
     pathset.show()
 
-    curve_connection_list = []
-    straight_connection_list = []
-    control_connecting = input('more? : [y/n]')
-
-
 print('connecting split lanes')
 pathset = PathSet(laneset=pathset.laneset().connect_split_lanes())
 print('connected split lanes')
 
-pathset.show(reverse=True)
+pathset.show()
 
 
 wayset = pathset.wayset()  # figure circles and branchs / initialize ID of points and line
