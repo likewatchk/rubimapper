@@ -1,7 +1,7 @@
 # rubimapper
 Autoware vector_map maker, GUI vector mapper, dtlane maker, dtlane manipulator.
 
-Author : Sungwoo Koo, Soongsil Univ, South Korea.
+Author : Sungwoo Koo, Kanghee kim, Soongsil Univ, South Korea.
 
 1. It is Vector map making tool written with Python3.
 2. It has dependency for rosbag(in ROS).
