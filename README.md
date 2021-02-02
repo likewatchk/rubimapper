@@ -17,3 +17,9 @@ vector map maker
 vector map tool
 create vector map Autoware
 Autoware
+
+2021.02.01
+1년 반 전에 만든 것인데
+이제보니 코드가 ㄹㅇ ㄸㅁ 입니다.
+그렇지만, 동작은 썩 잘 됩니다. 
+업데이트 일정은 아직 없습니다. 
